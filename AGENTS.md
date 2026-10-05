@@ -1,3 +1,3 @@
 # Petoria Backend Agent Instruction
 
-Peteria is NesJS GraphQL monorepo migrated from Real estate platform into petshop platform
+Petoria is a NestJS GraphQL monorepo migrated from Real estate platform into petshop platform

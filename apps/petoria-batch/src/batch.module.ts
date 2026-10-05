@@ -5,7 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from '../../petoria-api/src/database/database.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MongooseModule } from '@nestjs/mongoose';
-import PropertySchema from '../../petoria-api/src/shemas/Property.model';
+import ProductSchema from '../../petoria-api/src/shemas/Product.model';
 import MemberSchema from '../../petoria-api/src/shemas/Member.model';
 
 @Module({
@@ -13,7 +13,7 @@ import MemberSchema from '../../petoria-api/src/shemas/Member.model';
 		ConfigModule.forRoot(),
 		DatabaseModule,
 		ScheduleModule.forRoot(),
-		MongooseModule.forFeature([{ name: 'Property', schema: PropertySchema }]),
+		MongooseModule.forFeature([{ name: 'Product', schema: ProductSchema }]),
 		MongooseModule.forFeature([{ name: 'Member', schema: MemberSchema }]),
 	],
 	controllers: [BatchController],

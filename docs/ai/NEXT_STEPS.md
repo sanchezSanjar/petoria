@@ -13,9 +13,10 @@ Do the tasks top-down within each section. **P0** blocks everything else. Across
 | P2 | Fix the remaining type-safety lint errors | `no-unsafe-*`, `no-unused-vars`, `require-await`, `no-floating-promises` (e.g. `socket.gateway.ts`, `main.ts`, `Notice.model.ts`, `batch.controller.ts`) |
 | P2 | Rename `apps/petoria-api/src/shemas` → `schemas` | Update every import, including the batch imports |
 | P2 | Extract shared code into `libs/` (D11) | `libs/shared` with tsconfig `paths`; remove the batch `../../petoria-api/src` imports and the unused `apps/petoria-batch/src/database/database.module.ts` |
-| P3 | **Get D9 and D10 decided** | Product vs Pet; SELLER vs SHOP |
-| P3 | Domain rename: Property → Product, AGENT → SELLER | Schema, DTOs, enums, resolver names, `config.ts` sorts and lookups, upload target, batch jobs |
-| P3 | Mongo migration script | `memberType` AGENT→SELLER; `likeGroup`, `viewGroup`, `commentGroup`, `notificationGroup` PROPERTY→PRODUCT; `properties` → `products`; `memberProperties` → `memberProducts`; rebuild indexes |
+| ~~P3~~ | ~~Get D9 and D10 decided~~ | **Done**: Product accepted, AGENT kept |
+| ~~P3~~ | ~~Domain rename: Property → Product~~ | **Done** (AGENT kept); see `BACKEND_MIGRATION.md` §9. Not committed yet. |
+| P0 | Review and run the dev cleanup script | `scripts/2026-10-petoria-products.mongosh.js` (set `DRY_RUN = true` first). It was written, not run. |
+| P0 | Runtime smoke test of the product API | `createProduct` PET+gender / PET without gender (expect BadRequest) / FOOD without gender; `getProducts` with `speciesList`; like → `getFavorites`; view → `getVisited`; PRODUCT comment |
 | P4 | New modules: Notice (FAQ/terms/inquiry), Notification, Order/Cart (D12) | |
 
 ## Frontend migration (`petoria-next`)
@@ -26,7 +27,7 @@ Do the tasks top-down within each section. **P0** blocks everything else. Across
 | P0 | Get `npm run dev` / `next build` working against `petoria-api` | Check the `.env.development` `REACT_APP_API_*` values |
 | P1 | Identifier rename | `package.json` name, layouts, Footer, `_document` SEO, locales, `account/join`, `community/index` |
 | P2 | UI terminology in all 4 locales plus the hard-coded FAQ | No GraphQL changes yet |
-| P3 | Rename GraphQL documents, types, enums, routes and components | In lockstep with backend Phase 3; see `FRONTEND_MIGRATION.md` §2–4 |
+| P1 | Rename GraphQL documents, types, enums, routes and components | **The backend Phase 3 is done, so the frontend is now broken against it.** Use the operation names in `BACKEND_MIGRATION.md` §9. AGENT names stay. |
 | P3 | Replace the real-estate filters and the AddNewProperty form | `property/Filter`, `HeaderFilter`, `AddNewProperty`, `libs/config.ts` |
 | P4 | Assets, SEO, admin pages | |
 

@@ -24,7 +24,7 @@ Petoria is a pet shop platform built from the Nestar codebase. The infrastructur
 |---|---|---|
 | 1 | Rename project and app identifiers. No change to behaviour, the API or the database. | **Done** (`eab1fc8`) |
 | 2 | Clean up lint and formatting, fix the `shemas` → `schemas` typo, extract shared `libs/` | Not started |
-| 3 | Rename the domain: Property → Product/Pet, AGENT → SELLER. This breaks the API and the database. | **Proposed**, pending decision |
+| 3 | Rename the domain: Property → Product (AGENT kept). This breaks the API and the database. | **Done (backend)**, see §9. The frontend is not migrated yet. |
 | 4 | New commerce features: Order/Cart; wire up Notice and Notification | **Proposed** |
 
 ## 4. Naming changes (Phase 1, applied)
@@ -121,3 +121,44 @@ The config in `apps/petoria-api/src/libs/config.ts` also has property-specific h
 - **Uploads:** `apps/uploads/` was not moved. The static path `./apps/uploads` in `main.ts` still works.
 - **Phase 3 is a breaking change.** Renaming GraphQL operations, enums (`AGENT`, `PROPERTY`) or collections breaks the existing frontend and existing data. It needs a coordinated frontend release, a Mongo migration script for enum values in `members`, `likes`, `views`, `comments` and `notifications`, and either renaming or re-creating the `properties` collection.
 - **Lint baseline:** the repo has 1,436 lint problems that existed before the rename. Do not mix `eslint --fix` into refactor commits (see DECISIONS D6).
+
+## 9. Phase 3 — Property → Product (applied)
+
+> **This section supersedes the "Proposed" columns in §5–§7.** AGENT is kept, so `getAgents`, `BATCH_TOP_AGENTS` and the role guards are unchanged.
+
+### File renames (`git mv`)
+| Before | After |
+|---|---|
+| `components/property/property.{module,resolver,service}.ts` | `components/product/product.{module,resolver,service}.ts` |
+| `libs/dto/property/property{,.input,.update}.ts` | `libs/dto/product/product{,.input,.update}.ts` |
+| `libs/enums/property.enum.ts` | `libs/enums/product.enum.ts` |
+| `shemas/Property.model.ts` | `shemas/Product.model.ts` |
+
+### GraphQL
+| Before | After |
+|---|---|
+| `createProperty`, `updateProperty`, `likeTargetProperty` | `createProduct`, `updateProduct`, `likeTargetProduct` |
+| `getProperty`, `getProperties`, `getAgentProperties` | `getProduct`, `getProducts`, `getAgentProducts` |
+| `getAllPropertiesByAdmin`, `updatePropertyByAdmin`, `removePropertyByAdmin` | `getAllProductsByAdmin`, `updateProductByAdmin`, `removeProductByAdmin` (arg `productId`) |
+| `getFavorites`, `getVisited` | unchanged names, return `Products` |
+| Types `Property`, `Properties`, `PropertyInput`, `PropertyUpdate`, `PropertiesInquiry`, `AgentPropertiesInquiry`, `AllPropertiesInquiry` | `Product`, `Products`, `ProductInput`, `ProductUpdate`, `ProductsInquiry`, `AgentProductsInquiry`, `AllProductsInquiry` |
+| Enums `PropertyType`, `PropertyStatus`, `PropertyLocation` | `ProductType` (PET/FOOD/TOY/ACCESSORY), `ProductSpecies` (DOG/CAT/BIRD/FISH), `ProductGender` (MALE/FEMALE), `ProductStatus`, `ProductLocation` |
+| `PISearch`: `roomsList`, `bedsList`, `squaresRange`, `options` | removed; **added** `speciesList`, `genderList` (kept `memberId`, `locationList`, `typeList`, `pricesRange`, `periodsRange`, `text`) |
+| `SquaresRange` input | removed |
+| `ALPISearch.propertyStatus` / `propertyLocationList` | `productStatus` / `productLocationList` |
+| `LikeGroup` / `ViewGroup` / `CommentGroup` / `NotificationGroup` `PROPERTY` | `PRODUCT` |
+| `Member.memberProperties` | `Member.memberProducts` |
+
+### Business rules
+- `createProduct`, `updateProduct` and `updateProductByAdmin` throw `BadRequestException(Message.PET_GENDER_REQUIRED)` when `productType = PET` and there is no `productGender`. On update, the stored gender is used if the input doesn't send one.
+- SOLD/DELETE handling (`soldAt`, `deletedAt`, `memberProducts -1`) is the same as before.
+
+### MongoDB
+- `products` collection; unique index `{ productType, productLocation, productTitle, productPrice }`.
+- `members.memberProducts`; `notifications.productId` (ref `Product`).
+- `properties` collection is left in place (archive). The dev cleanup script is `scripts/2026-10-petoria-products.mongosh.js` (idempotent, has a `DRY_RUN` flag, **not run**).
+
+### Config and batch
+- `availableProductSorts`. `availableOptions` was deleted. `validUploadTargets` now has `'product'`; the `apps/uploads/product/` folder was created.
+- `lookupFavorite` / `lookupVisit` use `favoriteProduct.*` / `visitedProduct.*`; the like/view services look up `from: 'products'`.
+- Batch: `BATCH_TOP_PRODUCTS` (`productRank = productLikes*2 + productViews`). `BATCH_TOP_AGENTS` now uses `memberProducts*5 + memberArticles*3 + memberLikes*2 + memberViews`.

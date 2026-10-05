@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, InternalServerErrorException } from '@
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, type ObjectId } from 'mongoose';
 import { MemberService } from '../member/member.service';
-import { PropertyService } from '../property/property.service';
+import { ProductService } from '../product/product.service';
 import { BoardArticleService } from '../board-article/board-article.service';
 import { CommentInput, CommentsInquiry } from '../../libs/dto/comment/comment.input';
 import { Direction, Message } from '../../libs/enums/common.enum';
@@ -11,7 +11,7 @@ import { CommentUpdate } from '../../libs/dto/comment/comment.update';
 import { Comments, Comment } from '../../libs/dto/comment/comment';
 import { lookupMember } from '../../libs/config';
 import { T } from '../../libs/types/common';
-import { PropertyStatus } from '../../libs/enums/property.enum';
+import { ProductStatus } from '../../libs/enums/product.enum';
 import { BoardArticleStatus } from '../../libs/enums/board-article.enum';
 import { MemberStatus } from '../../libs/enums/member.enum';
 
@@ -19,11 +19,11 @@ import { MemberStatus } from '../../libs/enums/member.enum';
 export class CommentService {
   constructor(
     @InjectModel('Comment') private readonly commentModel: Model<Comment>,
-    @InjectModel('Property') private readonly propertyModel: Model<T>,
+    @InjectModel('Product') private readonly productModel: Model<T>,
     @InjectModel('BoardArticle') private readonly boardArticleModel: Model<T>,
     @InjectModel('Member') private readonly memberModel: Model<T>,
     private readonly memberService: MemberService,
-    private readonly propertyService: PropertyService,
+    private readonly productService: ProductService,
     private readonly boardArticleService: BoardArticleService,
   ) {}
 
@@ -70,8 +70,8 @@ export class CommentService {
 
     private async checkCommentTarget(commentGroup: CommentGroup, commentRefId: ObjectId): Promise<boolean> {
         switch (commentGroup) {
-            case CommentGroup.PROPERTY:
-                return !!(await this.propertyModel.exists({ _id: commentRefId, propertyStatus: PropertyStatus.ACTIVE }));
+            case CommentGroup.PRODUCT:
+                return !!(await this.productModel.exists({ _id: commentRefId, productStatus: ProductStatus.ACTIVE }));
             case CommentGroup.ARTICLE:
                 return !!(await this.boardArticleModel.exists({ _id: commentRefId, articleStatus: BoardArticleStatus.ACTIVE }));
             case CommentGroup.MEMBER:
@@ -83,8 +83,8 @@ export class CommentService {
 
     private async commentStatsEditor(commentGroup: CommentGroup, commentRefId: ObjectId, modifier: number): Promise<void> {
         switch (commentGroup) {
-            case CommentGroup.PROPERTY:
-                await this.propertyService.propertyStatsEditor({ _id: commentRefId, targetKey: 'propertyComments', modifier });
+            case CommentGroup.PRODUCT:
+                await this.productService.productStatsEditor({ _id: commentRefId, targetKey: 'productComments', modifier });
                 break;
             case CommentGroup.ARTICLE:
                 await this.boardArticleService.boardArticleStatsEditor({ _id: commentRefId, targetKey: 'articleComments', modifier });

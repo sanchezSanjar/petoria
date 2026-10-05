@@ -14,8 +14,8 @@ Each entry gives the decision, why it was made, the risks, and the alternatives.
 | D6 | Revert the `eslint --fix` output and lint in report-only mode | Accepted |
 | D7 | Add an `npm run typecheck` script | Accepted |
 | D8 | Delete the stale `dist/` | Accepted |
-| D9 | Core entity: Property → Product (and/or Pet) | Proposed |
-| D10 | Role: AGENT → SELLER | Proposed |
+| D9 | Core entity: Property → Product (pets = `productType PET`) | Accepted |
+| D10 | Role: AGENT → SELLER | Rejected (keep AGENT) |
 | D11 | Extract shared code into Nest `libs/` | Proposed |
 | D12 | Add Order/Cart; wire up Notice and Notification | Proposed |
 
@@ -69,22 +69,23 @@ Each entry gives the decision, why it was made, the risks, and the alternatives.
 - **Risks:** None.
 - **Alternatives:** Leave it.
 
-### D9 — Core entity: Property → Product (and/or Pet) — **Proposed**
-- **Options:**
-  - (a) **Product.** Pet supplies: category, pet type, brand, price, stock. Recommended as the main entity.
-  - (b) **Pet.** Animal listings: species, breed, age, gender, vaccinated.
-  - (c) Both.
-- **Why it matters:** It decides the schema, GraphQL names, frontend routes and data migration.
-- **Risks:** Breaking API change; `properties` data must be migrated or archived; the unique index on (type, location, title, price) must be redesigned.
-- **Alternatives:** Add a new `product` module alongside `property` and retire `property` later. That's safer for a gradual frontend switch.
+### D9 — Core entity: Property → Product — **Accepted**
+- **Decision:** Property is replaced by **Product**. Pets are Products with `productType = PET`. The schema follows the user's ER model (`products` collection):
+  - `productType`: PET, FOOD, TOY, ACCESSORY
+  - `productSpecies`: DOG, CAT, BIRD, FISH (**required**)
+  - `productGender`: MALE, FEMALE (**optional**; `ProductService` requires it when `productType = PET`)
+  - `productStatus` (ACTIVE/SOLD/DELETE), `productLocation` (SEOUL…JEJU), `productTitle`, `productPrice`, counters, `productImages`, `productDesc`, `memberId`, `soldAt`, `deletedAt`
+  - Removed real-estate fields: address, square, beds, rooms, barter, rent, constructedAt
+  - The ER leftovers `propertyLocation`, `propertyTitle`, `propertyGender` and `notifications.propertyId` were treated as typos for `product*`
+- **Why:** Petoria sells pets and pet supplies. A single catalog entity reuses the existing like, view, comment, rank and admin logic.
+- **Data:** Products start in a fresh `products` collection, and `properties` is kept as an archive. Social records that point at old properties are cleaned by `scripts/2026-10-petoria-products.mongosh.js`. That script is written but has not been run.
+- **Risks:** This breaks the GraphQL API for `petoria-next`. Gender validation happens only in the service (`PET_GENDER_REQUIRED`), not in the schema.
+- **Alternatives:** A separate Pet entity, rejected for duplication; or making gender always required (the ER's NN), rejected because gender doesn't apply to FOOD/TOY/ACCESSORY.
 
-### D10 — Role: AGENT → SELLER — **Proposed**
-- **Options:** `SELLER` (recommended), `SHOP`, or keep `AGENT`.
-- **Risks:**
-  - Enum values are stored in `members.memberType`, so this needs an `updateMany` migration.
-  - `@Roles(MemberType.AGENT)` guards, the batch `BATCH_TOP_AGENTS` job, the frontend `MemberType` enum and the JWT payload `memberType` all change.
-  - Existing tokens that carry `AGENT` must expire or be reissued.
-- **Alternatives:** Keep `AGENT` internally and change only the UI labels. Cheapest, but confusing.
+### D10 — Role: AGENT → SELLER — **Rejected**
+- **Decision:** Keep `MemberType.USER | AGENT | ADMIN`. AGENT owns products (`@Roles(MemberType.AGENT)` on `createProduct`, `updateProduct` and `getAgentProducts`). `getAgents` and `BATCH_TOP_AGENTS` keep their names.
+- **Why:** The user's decision, recorded in `AGENTS.md`. It avoids a data migration on `members.memberType` and invalidating JWTs.
+- **Risks:** The UI may still want to show "Seller"; that is a frontend label decision only.
 
 ### D11 — Extract shared code into Nest `libs/` — **Proposed**
 - **Problem:** `apps/petoria-batch` imports `../../petoria-api/src/{database,shemas,libs}`. This couples the apps and breaks whenever the API folder moves, as it did in this session.

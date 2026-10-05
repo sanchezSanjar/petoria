@@ -57,3 +57,83 @@ Created `docs/`: `BACKEND_MIGRATION.md`, `DECISIONS.md`, `FRONTEND_MIGRATION.md`
 
 - The rename is committed as **`eab1fc8 fix: Modify project name into petoria`** on `modification`, on top of `8e02da8`.
 - `docs/` is **untracked** (not committed yet).
+
+## 7. Phase 3: Property → Product (backend)
+
+Follows the user's ER model and `AGENTS.md`. `MemberType` (USER/AGENT/ADMIN) is unchanged. Full mapping: `BACKEND_MIGRATION.md` §9.
+
+| Area | Files |
+|---|---|
+| Renames (`git mv`) | `components/property/*` → `components/product/*`; `libs/dto/property/*` → `libs/dto/product/*`; `libs/enums/property.enum.ts` → `product.enum.ts`; `shemas/Property.model.ts` → `Product.model.ts` |
+| New enums | `ProductType` (PET/FOOD/TOY/ACCESSORY), `ProductSpecies` (DOG/CAT/BIRD/FISH), `ProductGender` (MALE/FEMALE) |
+| Schema | `products` collection; species required, gender optional; real-estate fields removed |
+| DTO / filters | `ProductInput`, `ProductUpdate`; `PISearch` adds `speciesList`/`genderList` and drops rooms/beds/squares/options |
+| Service rule | `PET_GENDER_REQUIRED` check on create, update and admin update |
+| Cross-module | like/view/comment/notification enums `PRODUCT`; like/view lookups `from: 'products'`; `memberProducts`; `notifications.productId`; `config.ts` sorts, lookups and upload target |
+| Batch | `BATCH_TOP_PRODUCTS`; top agents formula uses `memberProducts` |
+| New files | `scripts/2026-10-petoria-products.mongosh.js` (not run); `apps/uploads/product/` (gitignored) |
+
+### Validation
+| Check | Result |
+|---|---|
+| `grep -rniE "propert|squares|rooms|beds|barter|constructedAt" apps --include=*.ts` | 0 matches |
+| `npm run typecheck` | Pass |
+| `npm run build` / `nest build petoria-batch` | Pass |
+| `npx eslint` (report-only) | 1,390 problems, down from 1,436 (code removed). Remaining issues in touched files are pre-existing patterns. |
+| Runtime smoke test / batch run | **Not run.** It needs the dev Mongo; see `NEXT_STEPS.md` P0. |
+| Git | **Not committed** |
+
+## 8. AGENTS.md / skills compliance pass (Phase 3)
+
+The rule files `AGENTS.md`, `SKILLS.md` and `skills/*/SKILL.md` are **read-only for agents**. They were read and applied, and not modified.
+
+### Rule checklist
+| Rule (source) | Status | Evidence |
+|---|---|---|
+| Read `docs/ai/*` first (AGENTS.md "Read First") | Done | Read before Phase 3 |
+| Keep resolver/service/module + DI pattern (AGENTS.md) | Done | `components/product/product.{module,resolver,service}.ts` mirror the old property module |
+| DTOs and enums under `apps/petoria-api/src/libs` (AGENTS.md) | Done | `libs/dto/product/*`, `libs/enums/product.enum.ts`. Schemas stay in the existing `src/shemas/` folder, which is **not** under `libs`. Not moved, to avoid an unrequested refactor (see note below). |
+| Product terminology; no property or real-estate fields (AGENTS.md) | Done | 0 matches for `propert|squares|rooms|beds|barter|constructedAt` in `apps/**/*.ts` |
+| `MemberType` USER / AGENT / ADMIN unchanged; AGENT owns products (AGENTS.md) | Done | `@Roles(MemberType.AGENT)` on `createProduct`, `updateProduct`, `getAgentProducts` |
+| Enum values `productType` PET/FOOD/TOY/ACCESSORY, `productSpecies` DOG/CAT/BIRD/FISH, `productGender` MALE/FEMALE (AGENTS.md) | Done | `libs/enums/product.enum.ts` |
+| Update social modules consistently (backend-migration skill, step 6) | Done | like/view/comment/notification `PRODUCT` groups and product lookups |
+| Update batch ranking and `memberProducts` (backend-migration skill, step 7) | Done | `BATCH_TOP_PRODUCTS`; top agents formula uses `memberProducts` |
+| Update `docs/ai/COMPLETED_TASKS.md` after major work (AGENTS.md workflow 4, skill step 8) | Done | §7 and this section |
+| Add focused tests when behaviour changes (AGENTS.md workflow 5) | **Done in this pass**; it was missed in §7 | `apps/petoria-api/src/components/product/product.service.spec.ts` |
+| Validation: `tsc` for both apps + build (AGENTS.md) | Done | See below. The AGENTS.md line `npx run build` was run as `npm run build`. |
+| Do not use `npm run lint` (rewrites files) (AGENTS.md) | Done | Report-only `npx eslint` |
+
+### Focused tests added
+`product.service.spec.ts` uses plain mocks, so it needs no DB. `uuid` is mocked inside the spec because it ships ESM only and the Jest config can't load it. The Jest config in `package.json` was not changed.
+
+| Test | Covers |
+|---|---|
+| `createProduct` rejects a PET without `productGender` | `PET_GENDER_REQUIRED`; model not called |
+| `createProduct` creates a PET with gender | `memberStatsEditor` with `memberProducts +1` |
+| `createProduct` creates a non-PET without gender | gender is optional |
+| `updateProduct` rejects switching to PET with no stored or sent gender | update validation |
+| `updateProduct` allows switching to PET when a gender is stored | update validation uses the stored value |
+| `getProducts` filters by type, species and gender | `shapeMatchQuery` `$match` |
+
+### product-logic skill review (findings)
+| # | Finding | Impact | Path |
+|---|---|---|---|
+| 1 | Operation names use product terminology; `getFavorites` and `getVisited` return `Products` | OK | `components/product/product.resolver.ts` |
+| 2 | Nullability agrees: `productSpecies` required, and `productGender` / `productDesc` optional in the schema, `Product`, `ProductInput` and `ProductUpdate` | OK | `shemas/Product.model.ts`, `libs/dto/product/*` |
+| 3 | User search filters cover type, species, gender, price, location, period and text | OK | `ProductsInquiry.search` |
+| 4 | The admin search (`ALPISearch`) only filters by `productStatus` and `productLocationList`, not by type or species | Low; admin UX only | `libs/dto/product/product.input.ts` |
+| 5 | The unique index `{productType, productLocation, productTitle, productPrice}` is across **all** agents, so two agents can't list the same title, price and location | Medium; kept from the property index | `shemas/Product.model.ts` |
+| 6 | Unused `Directive` import (already there before this work) | Lint only | `libs/dto/product/product.input.ts` |
+
+### Validation (re-run)
+| Check | Result |
+|---|---|
+| `npx tsc -p apps/petoria-api/tsconfig.app.json --noEmit` | Pass |
+| `npx tsc -p apps/petoria-batch/tsconfig.app.json --noEmit` | Pass |
+| `npm run build` | Pass |
+| `npx jest apps/petoria-api/src/components/product` | **6 / 6 passed** |
+| Runtime smoke test against Mongo | Not run |
+
+### Notes for the owner (rule files not edited)
+- AGENTS.md says schemas live under `src/libs`, but they live in `src/shemas/`. Either the rule or the code should change; this is the owner's call.
+- AGENTS.md validation lists `npx run build`; the working command is `npm run build`.

@@ -137,3 +137,35 @@ The rule files `AGENTS.md`, `SKILLS.md` and `skills/*/SKILL.md` are **read-only 
 ### Notes for the owner (rule files not edited)
 - AGENTS.md says schemas live under `src/libs`, but they live in `src/shemas/`. Either the rule or the code should change; this is the owner's call.
 - AGENTS.md validation lists `npx run build`; the working command is `npm run build`.
+
+## 9. Prettier formatting pass (2026-10-09)
+
+Fixes the red `prettier/prettier` ESLint errors. This is **formatting only**: `npx prettier --write "apps/**/*.ts"`, using `.prettierrc` (tabs, single quotes, trailing commas, printWidth 120). `eslint --fix` was **not** used, because it also makes code changes such as removing type assertions (DECISIONS D6).
+
+| Check | Result |
+|---|---|
+| Files reformatted | 61 under `apps/` (+1,307 / −1,461 lines) |
+| Formatting-only proof | Every changed file is identical to `HEAD` once whitespace, quotes, commas, semicolons and parentheses are stripped |
+| `prettier/prettier` errors | 1,204 → **0** |
+| Total ESLint problems | 1,391 → **187**. The rest are type-safety rules, mostly `no-unsafe-*` (141) and `no-unused-vars` (30). |
+| `npx tsc` api / batch | Pass / Pass |
+| `npm run build` / `nest build petoria-batch` | Pass / Pass |
+| `npx jest` | 6 / 6 passed |
+| Git | Not committed |
+
+## 10. Type-safety lint fixes: member resolver (2026-10-09)
+
+| File | Fix | Runtime behaviour |
+|---|---|---|
+| `components/member/member.resolver.ts` | Removed unused `returns` params in `@Mutation(() => ...)` (×2). `delete input._id` without the `as any` cast (`_id` is optional in `MemberUpdate`). Dropped the redundant `as unknown as ObjectId`. `checkAuthRoles` reads `_id` as `Types.ObjectId` before calling `toString()`. | Unchanged |
+| `libs/config.ts` | `shapeIntoMongoObjectId(target: unknown): ObjectId`, typed instead of returning `any`. The logic is the same. This removes `no-unsafe-assignment` / `no-unsafe-argument` at its call sites in every resolver. | Unchanged |
+
+| Check | Result |
+|---|---|
+| `npx eslint member.resolver.ts` | 9 → **0** problems |
+| Total ESLint problems | 187 → **148** (no `prettier/prettier`) |
+| `npx tsc` api / batch | Pass / Pass |
+| `npm run build` / `nest build petoria-batch` | Pass / Pass |
+| `npx jest` | 6 / 6 passed |
+
+Remaining problems are concentrated in the auth layer: `auth/guards/{without,roles,auth}.guard.ts` and `auth/decorators/authMember.decorators.ts` (72 of 148), because the request/context objects are typed `any`.

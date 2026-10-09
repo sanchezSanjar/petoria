@@ -8,7 +8,7 @@ Do the tasks top-down within each section. **P0** blocks everything else. Across
 |---|---|---|
 | ~~P0~~ | ~~Commit the Phase 1 rename~~ | **Done**: `eab1fc8` |
 | P0 | Update deploy and runtime configs to the new paths | PM2, Docker or CI: `dist/apps/petoria-{api,batch}/main`, `nest start petoria-batch` |
-| P1 | Formatting-only commit | `npx eslint "{src,apps,libs,test}/**/*.ts" --fix` → review that only whitespace/prettier changed → commit `style: apply prettier/eslint autofix`. Exclude semantic autofixes such as removed type assertions, or review them on their own. |
+| ~~P1~~ | ~~Formatting-only commit~~ | **Done (not committed)**: Prettier pass, 0 `prettier/prettier` errors; see `COMPLETED_TASKS.md` §9 |
 | P1 | Remove `--fix` from the `lint` script, add `lint:fix` | Stops future refactors from being polluted |
 | P2 | Fix the remaining type-safety lint errors | `no-unsafe-*`, `no-unused-vars`, `require-await`, `no-floating-promises` (e.g. `socket.gateway.ts`, `main.ts`, `Notice.model.ts`, `batch.controller.ts`) |
 | P2 | Rename `apps/petoria-api/src/shemas` → `schemas` | Update every import, including the batch imports |

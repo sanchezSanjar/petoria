@@ -1,22 +1,12 @@
 import { Types } from 'mongoose';
+import type { ObjectId } from 'mongoose';
 import { BadRequestException } from '@nestjs/common';
 import { T } from './types/common';
 import { Message } from './enums/common.enum';
 
-export const availableAgentSorts = [
-	'createdAt',
-	'updatedAt',
-	'memberLikes',
-	'memberViews',
-	'memberRank',
-];
+export const availableAgentSorts = ['createdAt', 'updatedAt', 'memberLikes', 'memberViews', 'memberRank'];
 
-export const availableMemberSorts = [
-	'createdAt',
-	'updatedAt',
-	'memberLikes',
-	'memberViews',
-];
+export const availableMemberSorts = ['createdAt', 'updatedAt', 'memberLikes', 'memberViews'];
 
 export const availableProductSorts = [
 	'createdAt',
@@ -25,12 +15,12 @@ export const availableProductSorts = [
 	'productViews',
 	'productRank',
 	'productPrice',
-]
+];
 
 export const availableBoardArticleSorts = ['createdAt', 'updatedAt', 'articleLikes', 'articleViews'];
-export const availableCommentSorts = ['createdAt', 'updatedAt']
+export const availableCommentSorts = ['createdAt', 'updatedAt'];
 
- // IMAGE CONFIGURATION (config.js)
+// IMAGE CONFIGURATION (config.js)
 import { v4 as uuidv4 } from 'uuid';
 
 export const validMimeTypes = ['image/png', 'image/jpg', 'image/jpeg'];
@@ -47,10 +37,10 @@ export const getSerialForImage = (mimetype: string) => {
 	return uuidv4() + mimeExtensions[mimetype];
 };
 
-export const shapeIntoMongoObjectId = (target: any) => {
-	if (typeof target !== 'string') return target;
+export const shapeIntoMongoObjectId = (target: unknown): ObjectId => {
+	if (typeof target !== 'string') return target as ObjectId;
 	if (!Types.ObjectId.isValid(target)) throw new BadRequestException(Message.BAD_REQUEST);
-	return new Types.ObjectId(target);
+	return new Types.ObjectId(target) as unknown as ObjectId;
 };
 
 export const lookupAuthMemberLiked = (memberId: T, targetRefId: string = '$_id') => {
@@ -66,10 +56,7 @@ export const lookupAuthMemberLiked = (memberId: T, targetRefId: string = '$_id')
 				{
 					$match: {
 						$expr: {
-							$and: [
-								{ $eq: ['$likeRefId', '$$localLikeRefId'] },
-								{ $eq: ['$memberId', '$$localMemberId'] },
-							],
+							$and: [{ $eq: ['$likeRefId', '$$localLikeRefId'] }, { $eq: ['$memberId', '$$localMemberId'] }],
 						},
 					},
 				},
@@ -105,10 +92,7 @@ export const lookupAuthMemberFollowed = (input: LookupAuthMemberFollowed) => {
 				{
 					$match: {
 						$expr: {
-							$and: [
-								{ $eq: ['$followerId', '$$localFollowerId'] },
-								{ $eq: ['$followingId', '$$localFollowingId'] },
-							],
+							$and: [{ $eq: ['$followerId', '$$localFollowerId'] }, { $eq: ['$followingId', '$$localFollowingId'] }],
 						},
 					},
 				},
@@ -126,7 +110,6 @@ export const lookupAuthMemberFollowed = (input: LookupAuthMemberFollowed) => {
 	};
 };
 
-
 export const lookupMember = {
 	$lookup: {
 		from: 'members',
@@ -135,7 +118,6 @@ export const lookupMember = {
 		as: 'memberData',
 	},
 };
-
 
 export const lookupFollowingData = {
 	$lookup: {
@@ -155,7 +137,6 @@ export const lookupFollowerData = {
 	},
 };
 
-
 export const lookupFavorite = {
 	$lookup: {
 		from: 'members',
@@ -164,8 +145,6 @@ export const lookupFavorite = {
 		as: 'favoriteProduct.memberData',
 	},
 };
-
-
 
 export const lookupVisit = {
 	$lookup: {

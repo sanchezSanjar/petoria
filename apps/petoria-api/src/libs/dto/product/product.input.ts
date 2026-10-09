@@ -1,13 +1,7 @@
 import { Directive, Field, InputType, Int } from '@nestjs/graphql';
-import { IsNotEmpty, IsOptional, Length, Min, IsIn , ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsOptional, Length, Min, IsIn, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import {
-	ProductGender,
-	ProductLocation,
-	ProductSpecies,
-	ProductType,
-	ProductStatus,
-} from '../../enums/product.enum';
+import { ProductGender, ProductLocation, ProductSpecies, ProductType, ProductStatus } from '../../enums/product.enum';
 import type { ObjectId } from 'mongoose';
 import { availableProductSorts } from '../../config';
 import { Direction } from '../../enums/common.enum';
@@ -71,99 +65,98 @@ export class PeriodsRange {
 @InputType()
 class PISearch {
 	@IsOptional()
-	@Field(() => String, {nullable: true})
+	@Field(() => String, { nullable: true })
 	memberId?: ObjectId;
 
 	@IsOptional()
-	@Field(() => [ProductLocation], {nullable:true})
+	@Field(() => [ProductLocation], { nullable: true })
 	locationList?: ProductLocation[];
 
 	@IsOptional()
-	@Field(() => [ProductType], {nullable:true})
+	@Field(() => [ProductType], { nullable: true })
 	typeList?: ProductType[];
 
 	@IsOptional()
-	@Field(() => [ProductSpecies], {nullable:true})
+	@Field(() => [ProductSpecies], { nullable: true })
 	speciesList?: ProductSpecies[];
 
 	@IsOptional()
-	@Field(() => [ProductGender], {nullable:true})
+	@Field(() => [ProductGender], { nullable: true })
 	genderList?: ProductGender[];
 
 	@IsOptional()
-	@Field(() => PricesRange, {nullable:true})
+	@Field(() => PricesRange, { nullable: true })
 	pricesRange?: PricesRange;
 
 	@IsOptional()
-	@Field(() => PeriodsRange, {nullable:true})
+	@Field(() => PeriodsRange, { nullable: true })
 	periodsRange?: PeriodsRange;
 
 	@IsOptional()
-	@Field(() => String, {nullable:true})
+	@Field(() => String, { nullable: true })
 	text?: string;
 }
 @InputType()
 export class ProductsInquiry {
 	@IsNotEmpty()
-		@Min(1)
-		@Field(() => Int)
-		page: number;
-		
-	@IsNotEmpty()
-		@Min(1)
-		@Field(() => Int)
-		limit: number;
-
-	@IsOptional()
-		@IsIn(availableProductSorts)
-		@Field(() => String, {nullable:true})
-		sort?: string;
-
-	@IsOptional()
-		@Field(() => Direction, {nullable:true})
-		direction?: Direction;
+	@Min(1)
+	@Field(() => Int)
+	page: number;
 
 	@IsNotEmpty()
-		@ValidateNested()
-		@Type(() => PISearch)
-		@Field(() => PISearch)
-		search: PISearch;
+	@Min(1)
+	@Field(() => Int)
+	limit: number;
 
+	@IsOptional()
+	@IsIn(availableProductSorts)
+	@Field(() => String, { nullable: true })
+	sort?: string;
+
+	@IsOptional()
+	@Field(() => Direction, { nullable: true })
+	direction?: Direction;
+
+	@IsNotEmpty()
+	@ValidateNested()
+	@Type(() => PISearch)
+	@Field(() => PISearch)
+	search: PISearch;
 }
 
 @InputType()
 class APISearch {
-		@IsOptional()
-		@Field(() => ProductStatus, { nullable: true })
-		productStatus?: ProductStatus;
-		}
+	@IsOptional()
+	@Field(() => ProductStatus, { nullable: true })
+	productStatus?: ProductStatus;
+}
 
 @InputType()
 export class AgentProductsInquiry {
-		@IsNotEmpty()
-		@Min(1)
-		@Field(() => Int)
-		page: number;
+	@IsNotEmpty()
+	@Min(1)
+	@Field(() => Int)
+	page: number;
 
-		@IsNotEmpty()
-		@Min(1)
-		@Field(() => Int)
-		limit: number;
+	@IsNotEmpty()
+	@Min(1)
+	@Field(() => Int)
+	limit: number;
 
-		@IsOptional()
-		@IsIn(availableProductSorts)
-		@Field(() => String, { nullable: true })
-		sort?: string;
+	@IsOptional()
+	@IsIn(availableProductSorts)
+	@Field(() => String, { nullable: true })
+	sort?: string;
 
-		@IsOptional()
-		@Field(() => Direction, { nullable: true })
-		direction?: Direction;
+	@IsOptional()
+	@Field(() => Direction, { nullable: true })
+	direction?: Direction;
 
-		@IsNotEmpty()
-		@ValidateNested()
-		@Type(() => APISearch)
-		@Field(() => APISearch)
-		search: APISearch;
+	@IsNotEmpty()
+	@ValidateNested()
+	@Type(() => APISearch)
+	@Field(() => APISearch)
+	search: APISearch;
 }
 
 @InputType()
@@ -204,7 +197,6 @@ export class AllProductsInquiry {
 	@Field(() => ALPISearch)
 	search: ALPISearch;
 }
-
 
 @InputType()
 export class OrdinaryInquiry {

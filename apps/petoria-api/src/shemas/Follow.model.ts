@@ -12,7 +12,7 @@ const FollowSchema = new Schema(
 			required: true,
 		},
 	},
-	{ timestamps: true, collection: "follow" },
+	{ timestamps: true, collection: 'follow' },
 );
 
 FollowSchema.index({ followingId: 1, followerId: 1 }, { unique: true });

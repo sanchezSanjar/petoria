@@ -1,12 +1,6 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import type { ObjectId } from 'mongoose';
-import {
-	ProductGender,
-	ProductLocation,
-	ProductSpecies,
-	ProductStatus,
-	ProductType,
-} from '../../enums/product.enum';
+import { ProductGender, ProductLocation, ProductSpecies, ProductStatus, ProductType } from '../../enums/product.enum';
 import { Member, TotalCounter } from '../member/member';
 import { MeLiked } from '../like/like';
 
@@ -69,10 +63,9 @@ export class Product {
 	@Field(() => Date)
 	updatedAt: Date;
 
-
 	// from aggregation
 
-	@Field(() => Member, {nullable:true})
+	@Field(() => Member, { nullable: true })
 	memberData?: Member;
 
 	@Field(() => [MeLiked], { nullable: true })
@@ -84,6 +77,6 @@ export class Products {
 	@Field(() => [Product])
 	list: Product[];
 
-	@Field(() => [TotalCounter], {nullable:true})
+	@Field(() => [TotalCounter], { nullable: true })
 	metaCounter: TotalCounter[];
 }

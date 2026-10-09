@@ -13,25 +13,24 @@ import { SocketModule } from './socket/socket.module';
 @Module({
 	imports: [
 		ConfigModule.forRoot(), // .env
-		GraphQLModule.forRoot({ // Rest > GraphQL
+		GraphQLModule.forRoot({
+			// Rest > GraphQL
 			driver: ApolloDriver,
 			playground: true,
 			uploads: false,
 			autoSchemaFile: true,
 			formatError: (error: T) => {
-				const rawMessage =
-					error?.extensions?.originalError?.message ||
-					error?.message;
+				const rawMessage = error?.extensions?.originalError?.message || error?.message;
 				const graphQLFormattedError = {
 					code: error?.extensions?.code,
 					message: Array.isArray(rawMessage) ? rawMessage.join(', ') : String(rawMessage),
 				};
-				console.log("GRAPHQL GLOBAL ERR:", graphQLFormattedError);
-				return graphQLFormattedError; 
-			}
+				console.log('GRAPHQL GLOBAL ERR:', graphQLFormattedError);
+				return graphQLFormattedError;
+			},
 		}),
-		ComponentsModule,	//Http
-		DatabaseModule,		//TCP
+		ComponentsModule, //Http
+		DatabaseModule, //TCP
 		SocketModule,
 	],
 	controllers: [AppController], //REST API

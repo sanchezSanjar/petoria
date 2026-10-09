@@ -6,7 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import MemberSchema from '../../shemas/Member.model';
 
 @Module({
-  imports: [
+	imports: [
 		HttpModule,
 		MongooseModule.forFeature([{ name: 'Member', schema: MemberSchema }]),
 		JwtModule.register({
@@ -14,7 +14,7 @@ import MemberSchema from '../../shemas/Member.model';
 			signOptions: { expiresIn: '30d' },
 		}),
 	],
-  providers: [AuthService],
-  exports: [AuthService],
+	providers: [AuthService],
+	exports: [AuthService],
 })
 export class AuthModule {}

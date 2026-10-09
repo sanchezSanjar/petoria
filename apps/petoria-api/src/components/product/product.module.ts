@@ -9,11 +9,11 @@ import { MemberModule } from '../member/member.module';
 import { LikeModule } from '../like/like.module';
 
 @Module({
-    imports: [
+	imports: [
 		MongooseModule.forFeature([{ name: 'Product', schema: ProductSchema }]),
 		AuthModule,
 		ViewModule,
-        MemberModule,
+		MemberModule,
 		LikeModule,
 	],
 	providers: [ProductResolver, ProductService],

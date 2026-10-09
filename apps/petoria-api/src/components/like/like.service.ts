@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, ObjectId  } from 'mongoose';
-import { Like,MeLiked } from '../../libs/dto/like/like';
+import { Model, ObjectId } from 'mongoose';
+import { Like, MeLiked } from '../../libs/dto/like/like';
 import { LikeInput } from '../../libs/dto/like/like.input';
 import { T } from '../../libs/types/common';
 import { Message } from '../../libs/enums/common.enum';
@@ -13,7 +13,7 @@ import { ProductStatus } from '../../libs/enums/product.enum';
 
 @Injectable()
 export class LikeService {
-   constructor(@InjectModel('Like') private readonly likeModel: Model<Like>) {}
+	constructor(@InjectModel('Like') private readonly likeModel: Model<Like>) {}
 
 	public async toggleLike(input: LikeInput): Promise<number> {
 		const search: T = { memberId: input.memberId, likeRefId: input.likeRefId },
@@ -36,20 +36,13 @@ export class LikeService {
 		return modifier;
 	}
 
-
 	public async checkLikeExistence(input: LikeInput): Promise<MeLiked[]> {
 		const { memberId, likeRefId } = input;
-		const result = await this.likeModel
-			.findOne({ memberId: memberId, likeRefId: likeRefId })
-			.exec();
+		const result = await this.likeModel.findOne({ memberId: memberId, likeRefId: likeRefId }).exec();
 		return result ? [{ memberId: memberId, likeRefId: likeRefId, myFavorite: true }] : [];
 	}
 
-
-	public async getFavoriteProducts(
-		memberId: ObjectId,
-		input: OrdinaryInquiry,
-	): Promise<Products> {
+	public async getFavoriteProducts(memberId: ObjectId, input: OrdinaryInquiry): Promise<Products> {
 		const { page, limit } = input;
 		const match: T = { likeGroup: LikeGroup.PRODUCT, memberId: memberId };
 

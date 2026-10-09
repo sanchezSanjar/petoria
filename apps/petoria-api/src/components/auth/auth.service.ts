@@ -11,7 +11,7 @@ import { MemberStatus } from '../../libs/enums/member.enum';
 
 @Injectable()
 export class AuthService {
-    constructor(
+	constructor(
 		private JwtService: JwtService,
 		@InjectModel('Member') private readonly memberModel: Model<Member>,
 	) {}
@@ -24,7 +24,7 @@ export class AuthService {
 		return await bcrypt.compare(password, hashedPassword);
 	}
 
-    public async createToken(member: Member): Promise<string> {
+	public async createToken(member: Member): Promise<string> {
 		const payload: T = {};
 		Object.keys(member['_doc'] ? member['_doc'] : member).map((ele) => {
 			payload[`${ele}`] = member[`${ele}`];

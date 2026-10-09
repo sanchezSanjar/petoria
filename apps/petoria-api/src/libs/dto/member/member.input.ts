@@ -1,47 +1,46 @@
-import { Field, InputType , Int} from "@nestjs/graphql";
-import {IsIn, IsNotEmpty, IsOptional, Length , Min, ValidateNested } from 'class-validator';
+import { Field, InputType, Int } from '@nestjs/graphql';
+import { IsIn, IsNotEmpty, IsOptional, Length, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { MemberAuthType, MemberType, MemberStatus } from "../../enums/member.enum";
-import { availableAgentSorts, availableMemberSorts  } from '../../config';
+import { MemberAuthType, MemberType, MemberStatus } from '../../enums/member.enum';
+import { availableAgentSorts, availableMemberSorts } from '../../config';
 import { Direction } from '../../enums/common.enum';
 
 @InputType()
 export class MemberInput {
-    @IsNotEmpty()
-    @Length(3,12)
-    @Field(() => String)
-    memberNick: string;
-    
-    @IsNotEmpty()
-    @Length(5,12)
-    @Field(() => String)
-    memberPassword: string;
+	@IsNotEmpty()
+	@Length(3, 12)
+	@Field(() => String)
+	memberNick: string;
 
-    @IsNotEmpty()
-    @Field(() => String)
-    memberPhone: string;
-    
-    @IsOptional()
-    @Field(() => MemberType, { nullable: true})
-    memberType?: MemberType;
-    
-    @IsOptional()
-    @Field(() => MemberAuthType, { nullable: true})
-    memberAuthType?: MemberAuthType;
+	@IsNotEmpty()
+	@Length(5, 12)
+	@Field(() => String)
+	memberPassword: string;
+
+	@IsNotEmpty()
+	@Field(() => String)
+	memberPhone: string;
+
+	@IsOptional()
+	@Field(() => MemberType, { nullable: true })
+	memberType?: MemberType;
+
+	@IsOptional()
+	@Field(() => MemberAuthType, { nullable: true })
+	memberAuthType?: MemberAuthType;
 }
 
 @InputType()
 export class LoginInput {
-    @IsNotEmpty()
-    @Length(3,12)
-    @Field(() => String)
-    memberNick: string;
-    
-    @IsNotEmpty()
-    @Length(5,12)
-    @Field(() => String)
-    memberPassword: string;
-       
+	@IsNotEmpty()
+	@Length(3, 12)
+	@Field(() => String)
+	memberNick: string;
+
+	@IsNotEmpty()
+	@Length(5, 12)
+	@Field(() => String)
+	memberPassword: string;
 }
 
 @InputType()
@@ -78,7 +77,6 @@ export class AgentsInquiry {
 	@Field(() => AISearch)
 	search: AISearch;
 }
-
 
 @InputType()
 class MISearch {

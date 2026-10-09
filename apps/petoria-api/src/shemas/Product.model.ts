@@ -1,11 +1,5 @@
 import { Schema } from 'mongoose';
-import {
-	ProductGender,
-	ProductLocation,
-	ProductSpecies,
-	ProductStatus,
-	ProductType,
-} from '../libs/enums/product.enum';
+import { ProductGender, ProductLocation, ProductSpecies, ProductStatus, ProductType } from '../libs/enums/product.enum';
 
 const ProductSchema = new Schema(
 	{

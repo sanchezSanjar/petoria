@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable,InternalServerErrorException} from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId } from 'mongoose';
 import { Follower, Followers, Following, Followings } from '../../libs/dto/follow/follow';
@@ -6,7 +6,12 @@ import { MemberService } from '../member/member.service';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import { FollowInquiry } from '../../libs/dto/follow/follow.input';
 import { T } from '../../libs/types/common';
-import { lookupFollowerData, lookupFollowingData, lookupAuthMemberLiked, lookupAuthMemberFollowed } from '../../libs/config';
+import {
+	lookupFollowerData,
+	lookupFollowingData,
+	lookupAuthMemberLiked,
+	lookupAuthMemberFollowed,
+} from '../../libs/config';
 
 @Injectable()
 export class FollowService {
@@ -14,7 +19,6 @@ export class FollowService {
 		@InjectModel('Follow') private readonly followModel: Model<Follower | Following>,
 		private readonly memberService: MemberService,
 	) {}
-
 
 	public async subscribe(followerId: ObjectId, followingId: ObjectId): Promise<Follower> {
 		// uziga uziga subs noooo
@@ -41,22 +45,19 @@ export class FollowService {
 		return result;
 	}
 
-	private async registerSubscription(followerId: ObjectId,followingId: ObjectId): Promise<Follower> {
+	private async registerSubscription(followerId: ObjectId, followingId: ObjectId): Promise<Follower> {
 		try {
 			return await this.followModel.create({
 				followingId: followingId,
 				followerId: followerId,
 			});
 		} catch (err) {
-			console.log('Error, Service.model:', err instanceof Error ? err.message : err);
+			console.log('Error, Service.model:', err);
 			throw new BadRequestException(Message.CREATE_FAILED);
 		}
 	}
 
-	public async unsubscribe(
-		followerId: ObjectId,
-		followingId: ObjectId,
-	): Promise<Follower> {
+	public async unsubscribe(followerId: ObjectId, followingId: ObjectId): Promise<Follower> {
 		const targetMember = await this.memberService.getMember(followingId, followerId, false);
 		if (!targetMember) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
@@ -82,10 +83,7 @@ export class FollowService {
 		return result;
 	}
 
-	public async getMemberFollowings(
-		memberId: ObjectId,
-		input: FollowInquiry,
-	): Promise<Followings> {
+	public async getMemberFollowings(memberId: ObjectId, input: FollowInquiry): Promise<Followings> {
 		const { page, limit, search } = input;
 		if (!search?.followerId) throw new InternalServerErrorException(Message.BAD_REQUEST);
 		const match: T = { followerId: search?.followerId };
@@ -120,10 +118,7 @@ export class FollowService {
 		return result[0];
 	}
 
-	public async getMemberFollowers(
-		memberId: ObjectId,
-		input: FollowInquiry,
-	): Promise<Followers> {
+	public async getMemberFollowers(memberId: ObjectId, input: FollowInquiry): Promise<Followers> {
 		const { page, limit, search } = input;
 		if (!search?.followingId) throw new InternalServerErrorException(Message.BAD_REQUEST);
 

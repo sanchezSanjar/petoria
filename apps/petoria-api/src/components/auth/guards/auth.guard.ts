@@ -25,7 +25,7 @@ export class AuthGuard implements CanActivate {
 
 			return true;
 		}
-        return false;
+		return false;
 		// description => http, rpc, gprs and etc are ignored
 	}
 }

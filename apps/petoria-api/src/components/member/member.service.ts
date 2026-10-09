@@ -1,8 +1,14 @@
-import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import {
+	BadRequestException,
+	ForbiddenException,
+	Injectable,
+	InternalServerErrorException,
+	UnauthorizedException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, ObjectId  } from 'mongoose';
-import { Member , Members } from '../../libs/dto/member/member';
-import { AgentsInquiry, LoginInput, MemberInput,MembersInquiry } from '../../libs/dto/member/member.input';
+import { Model, ObjectId } from 'mongoose';
+import { Member, Members } from '../../libs/dto/member/member';
+import { AgentsInquiry, LoginInput, MemberInput, MembersInquiry } from '../../libs/dto/member/member.input';
 import { MemberStatus, MemberType } from '../../libs/enums/member.enum';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import { AuthService } from '../auth/auth.service';
@@ -19,85 +25,75 @@ import { escapeRegex, handleDuplicateKey, lookupAuthMemberLiked } from '../../li
 
 @Injectable()
 export class MemberService {
-    constructor(
-        @InjectModel("Member") private readonly memberModel: Model<Member>,
+	constructor(
+		@InjectModel('Member') private readonly memberModel: Model<Member>,
 		@InjectModel('Follow') private readonly followModel: Model<Follower | Following>,
-        private authService: AuthService,
-        private viewService: ViewService,
+		private authService: AuthService,
+		private viewService: ViewService,
 		private likeService: LikeService,
-        ) {}
-    
-    public async signup(input: MemberInput): Promise<Member> {
-        input.memberPassword = await this.authService.hashPassword(input.memberPassword);
-        try {
-            const result = await this.memberModel.create(input);
-        // Authentication via TOKEN
-        result.accessToken = await this.authService.createToken(result);
-            return result;
-        } catch(err:any) {
-            console.log("Error, Service.model:", err.message);
-            throw new BadRequestException(Message.USED_MEMBER_NICK_OR_PHONE);
-        }   
-    }
-    
-    public async login(input: LoginInput): Promise<Member> {
-        const {memberNick, memberPassword} = input;
-        const response = await this.memberModel
-        .findOne({memberNick: memberNick})
-        .select('+memberPassword') 
-        .exec();
+	) {}
 
-        if(!response || response.memberStatus === MemberStatus.DELETE) {
-            throw new UnauthorizedException(Message.NO_MEMBER_NICK);
-        } else if(response.memberStatus === MemberStatus.BLOCK) {
-            throw new ForbiddenException(Message.BLOCKED_USER);
-        }
+	public async signup(input: MemberInput): Promise<Member> {
+		input.memberPassword = await this.authService.hashPassword(input.memberPassword);
+		try {
+			const result = await this.memberModel.create(input);
+			// Authentication via TOKEN
+			result.accessToken = await this.authService.createToken(result);
+			return result;
+		} catch (err: any) {
+			console.log('Error, Service.model:', err);
+			throw new BadRequestException(Message.USED_MEMBER_NICK_OR_PHONE);
+		}
+	}
 
-        const isMatch = await this.authService.comparePassword(input.memberPassword, response.memberPassword!);
-        if(!isMatch) throw new UnauthorizedException(Message.WRONG_PASSWORD)
+	public async login(input: LoginInput): Promise<Member> {
+		const { memberNick, memberPassword } = input;
+		const response = await this.memberModel.findOne({ memberNick: memberNick }).select('+memberPassword').exec();
 
+		if (!response || response.memberStatus === MemberStatus.DELETE) {
+			throw new UnauthorizedException(Message.NO_MEMBER_NICK);
+		} else if (response.memberStatus === MemberStatus.BLOCK) {
+			throw new ForbiddenException(Message.BLOCKED_USER);
+		}
 
-        response.accessToken = await this.authService.createToken(response);
+		const isMatch = await this.authService.comparePassword(input.memberPassword, response.memberPassword!);
+		if (!isMatch) throw new UnauthorizedException(Message.WRONG_PASSWORD);
 
-        return response;
-    }
+		response.accessToken = await this.authService.createToken(response);
 
-   public async updateMember(memberId: ObjectId, input: MemberUpdate): Promise<Member> {
+		return response;
+	}
+
+	public async updateMember(memberId: ObjectId, input: MemberUpdate): Promise<Member> {
 		if (input.memberPassword) input.memberPassword = await this.authService.hashPassword(input.memberPassword);
 		const result: Member | null = await this.memberModel
-			.findOneAndUpdate({
-				_id: memberId,
-				memberStatus: MemberStatus.ACTIVE
-			},
+			.findOneAndUpdate(
+				{
+					_id: memberId,
+					memberStatus: MemberStatus.ACTIVE,
+				},
 				input,
-				{ new: true })
+				{ new: true },
+			)
 			.exec()
 			.catch(handleDuplicateKey(Message.USED_MEMBER_NICK_OR_PHONE));
 		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
 		result.accessToken = await this.authService.createToken(result);
 
 		return result;
-   }
+	}
 
-    public async getMember(
-		targetId: ObjectId, 
-		memberId: ObjectId,
-		recordView: boolean = true,
-	): Promise<Member> {
+	public async getMember(targetId: ObjectId, memberId: ObjectId, recordView: boolean = true): Promise<Member> {
 		const search: T = {
 			_id: targetId,
 			memberStatus: {
 				$in: [MemberStatus.ACTIVE, MemberStatus.BLOCK],
 			},
 		};
-		const targetMember: Member | null = await this.memberModel
-			.findOne(search)
-			.lean()
-			.exec();
+		const targetMember: Member | null = await this.memberModel.findOne(search).lean().exec();
 		if (!targetMember) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 
-
-        if (memberId) {
+		if (memberId) {
 			// record view
 			if (recordView) {
 				const viewInput: ViewInput = {
@@ -108,14 +104,12 @@ export class MemberService {
 				const newView = await this.viewService.recordView(viewInput);
 				if (newView) {
 					// increase memberView
-					await this.memberModel
-						.findOneAndUpdate(search, { $inc: { memberViews: 1 } }, { new: true })
-						.exec();
+					await this.memberModel.findOneAndUpdate(search, { $inc: { memberViews: 1 } }, { new: true }).exec();
 					targetMember.memberViews++;
 				}
 			}
 
-            // meLiked
+			// meLiked
 			const likeInput = {
 				memberId: memberId,
 				likeRefId: targetId,
@@ -127,23 +121,14 @@ export class MemberService {
 		}
 
 		return targetMember;
-    }
-
-
-	private async checkSubscription(
-		followerId: ObjectId,
-		followingId: ObjectId,
-	): Promise<MeFollowed[]> {
-		const result = await this.followModel
-			.findOne({ followingId: followingId, followerId: followerId })
-			.exec();
-		return result
-			? [{ followerId: followerId, followingId: followingId, myFollowing: true }]
-			: [];
 	}
 
+	private async checkSubscription(followerId: ObjectId, followingId: ObjectId): Promise<MeFollowed[]> {
+		const result = await this.followModel.findOne({ followingId: followingId, followerId: followerId }).exec();
+		return result ? [{ followerId: followerId, followingId: followingId, myFollowing: true }] : [];
+	}
 
-    public async getAgents(memberId: ObjectId, input: AgentsInquiry): Promise<Members> {
+	public async getAgents(memberId: ObjectId, input: AgentsInquiry): Promise<Members> {
 		const { text } = input.search;
 		const match: T = { memberType: MemberType.AGENT, memberStatus: MemberStatus.ACTIVE };
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
@@ -173,10 +158,7 @@ export class MemberService {
 		return result[0];
 	}
 
-	public async likeTargetMember(
-		memberId: ObjectId,
-		likeRefId: ObjectId,
-	): Promise<Member> {
+	public async likeTargetMember(memberId: ObjectId, likeRefId: ObjectId): Promise<Member> {
 		const target: Member | null = await this.memberModel
 			.findOne({ _id: likeRefId, memberStatus: MemberStatus.ACTIVE }) //biz Like bosmoqchi bolgan member DB bormi?
 			.exec();
@@ -200,10 +182,7 @@ export class MemberService {
 		return result;
 	}
 
-
-
-
-    public async getAllMembersByAdmin(input: MembersInquiry): Promise<Members> {
+	public async getAllMembersByAdmin(input: MembersInquiry): Promise<Members> {
 		const { memberStatus, memberType, text } = input.search;
 		const match: T = {};
 		const sort: T = { [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC };
@@ -228,7 +207,7 @@ export class MemberService {
 		//console.log('result:', result);
 		if (!result.length) throw new InternalServerErrorException(Message.NO_DATA_FOUND);
 		return result[0];
-    }
+	}
 
 	public async updateMembersByAdmin(input: MemberUpdate): Promise<Member> {
 		if (!input._id) throw new BadRequestException(Message.BAD_REQUEST);
@@ -241,20 +220,21 @@ export class MemberService {
 		return result;
 	}
 
-
 	public async memberStatsEditor(input: StatisticModifier): Promise<Member> {
-    const { _id, targetKey, modifier } = input;
+		const { _id, targetKey, modifier } = input;
 
-    const result = await this.memberModel.findByIdAndUpdate(
-        _id,
-        {
-            $inc: { [targetKey]: modifier },
-        },
-        { new: true },
-    ).exec();
+		const result = await this.memberModel
+			.findByIdAndUpdate(
+				_id,
+				{
+					$inc: { [targetKey]: modifier },
+				},
+				{ new: true },
+			)
+			.exec();
 
-    if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
+		if (!result) throw new InternalServerErrorException(Message.UPDATE_FAILED);
 
-    return result;
+		return result;
 	}
 }

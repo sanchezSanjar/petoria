@@ -1,5 +1,5 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
-import { IsIn, IsNotEmpty, IsOptional, Length, Min , ValidateNested } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, Length, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import type { ObjectId } from 'mongoose';
 import { BoardArticleCategory, BoardArticleStatus } from '../../enums/board-article.enum';

@@ -9,14 +9,14 @@ import { LikeModule } from '../like/like.module';
 import FollowSchema from '../../shemas/Follow.model';
 
 @Module({
-  imports: [
+	imports: [
 		MongooseModule.forFeature([{ name: 'Member', schema: MemberSchema }]),
 		MongooseModule.forFeature([{ name: 'Follow', schema: FollowSchema }]),
 		AuthModule,
 		ViewModule,
 		LikeModule,
 	],
-    providers: [MemberResolver, MemberService],
+	providers: [MemberResolver, MemberService],
 	exports: [MemberService],
 })
 export class MemberModule {}

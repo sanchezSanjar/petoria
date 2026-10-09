@@ -8,5 +8,4 @@ import ViewSchema from '../../shemas/View.model';
 	providers: [ViewService],
 	exports: [ViewService],
 })
-
 export class ViewModule {}

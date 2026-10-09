@@ -169,3 +169,75 @@ Fixes the red `prettier/prettier` ESLint errors. This is **formatting only**: `n
 | `npx jest` | 6 / 6 passed |
 
 Remaining problems are concentrated in the auth layer: `auth/guards/{without,roles,auth}.guard.ts` and `auth/decorators/authMember.decorators.ts` (72 of 148), because the request/context objects are typed `any`.
+
+## 11. Frontend Phase 0–1: environment and UI restore (`petoria-next`, 2026-10-09)
+
+Plan: phases 0–8 agreed this session, following `FRONTEND_MIGRATION.md` §1. Decisions: code and routes keep `agent` and only the UI label says "Seller"; `/property*` → `/product*` with redirects (later phase).
+
+| Task | Result |
+|---|---|
+| Phase 0: dependencies | `node_modules` was partial (no `next` or `typescript`) and a stale `.yarn-integrity` made `yarn install` a no-op. Fixed with `yarn install --check-files`; `yarn.lock` unchanged. |
+| Phase 0: backend | `sayHello` on `http://localhost:3007/graphql` responds |
+| Phase 0: baseline typecheck | 1 error: `Chat.tsx` can't find `scss/MaterialTheme/styled` (`scss/` was deleted) |
+| Phase 1: restore | `git checkout 7cda7c8 -- pages public scss`: 166 files, identical to `7cda7c8` |
+| Phase 1: script | Added `"typecheck": "tsc --noEmit"` to `package.json` |
+
+| Check | Result |
+|---|---|
+| `yarn typecheck` | **Pass** |
+| `yarn dev` → `GET /` | **200**, compiles. Product and member data calls are expected to fail until Phases 3–5 (the GraphQL documents still use Property names). |
+| Git | `petoria-next` commit `c988999 fix: restore UI layer deleted in 6a995bf` |
+
+## 12. Frontend Phase 2: Nestar → Petoria identifier rename (`petoria-next`, 2026-10-09)
+
+No GraphQL documents, types or routes were changed.
+
+| File(s) | Change |
+|---|---|
+| `package.json` | `name` → `petoria-next` |
+| `libs/components/layout/{LayoutHome,LayoutFull,LayoutBasic}.tsx` | `<title>` and `meta title` → `Petoria` |
+| `libs/components/Footer.tsx` + 4 locales | Copyright key and value → `© Petoria - All rights reserved. Petoria {{year}}` (key renamed in code and locales together) |
+| `pages/community/index.tsx` + 4 locales | `Nestar Community` key and value → `Petoria Community` |
+| `pages/account/join.tsx` | Logo text → `Petoria` |
+| `member/{MemberFollowers,MemberFollowings,MemberProperties}.tsx`, `mypage/{MyFavorites,MyProperties,RecentlyVisited}.tsx` | Mobile placeholder text `NESTAR …` → `PETORIA …` |
+| `kr/common.json` | `Our Exclusive Agetns` value: `Nestar` → `Petoria` (the key typo and the "Seller" wording are left for Phase 6) |
+| `pages/_document.tsx` | SEO keywords and EN/RU/KR description rewritten for a pet shop; `nestar.uz` removed (no Petoria domain yet) |
+
+| Check | Result |
+|---|---|
+| `grep -rni nestar apollo libs pages public/locales package.json` | **0 matches** |
+| Locale JSON parse | 4 / 4 valid, 350 keys each |
+| `yarn typecheck` | **Pass** |
+| `yarn build` | **Pass** (93 static pages) |
+| Git | `petoria-next` commit `6954ae7 feat: rename Nestar identifiers to Petoria` |
+
+## 13. Frontend Phases 3–5: Property → Product (`petoria-next`, 2026-10-09)
+
+Brings the frontend in line with backend Phase 3 (§7, `BACKEND_MIGRATION.md` §9). AGENT is kept: the code and routes stay `agent`. Translation keys and visible wording are **unchanged** (that is Phase 6).
+
+| Area | Change |
+|---|---|
+| Types / enums | `git mv` `libs/enums/property.enum.ts` → `product.enum.ts` (`ProductType` PET/FOOD/TOY/ACCESSORY, `ProductSpecies`, `ProductGender`, `ProductStatus`, `ProductLocation`); `libs/types/property/*` → `libs/types/product/*`. Real-estate fields removed; `speciesList`/`genderList` added to `PISearch`. `memberProperties` → `memberProducts` (member type, JWT payload, `libs/auth`, `apollo/store`). Like/view/comment/notification `PROPERTY` → `PRODUCT`. |
+| `libs/config.ts` | Removed `availableOptions`, `propertyYears`, `propertySquare`; `topPropertyRank` → `topProductRank` |
+| GraphQL documents | `apollo/{user,admin}/{query,mutation}.ts`: operations, variable types and selections renamed; real-estate fields removed; `productSpecies`/`productGender` added |
+| Components / pages / SCSS | 27 `git mv` renames (e.g. `homepage/TopProducts`, `product/Filter`, `mypage/AddNewProduct`, `admin/products/ProductList`, `pages/product/*`, `pages/_admin/products`, `scss/pc/product/*`). Identifiers, class names, routes and tab names renamed together. `t('…')` keys and `/img/…` paths were protected. `cs/Faq.tsx` was left for Phase 6. |
+| New `libs/components/common/ProductSpecs.tsx` | `getProductSpecs(product)`: type, species and gender (gender only when set), with MUI icons. Used by every card and the detail page in place of beds/rooms/m². |
+| Cards / detail page | Address → location; Rent/Barter → Available/Sold out (`productStatus`). On the detail page, the option tiles and details table show type, species, gender, location, status and listed date; the "Floor Plans" section was removed. |
+| Filters | `product/Filter.tsx`: rooms, beds, options and square removed; Species and Gender checkboxes added (one shared `productListSelectHandler`). `homepage/HeaderFilter.tsx`: the Rooms dropdown is now Species; in the modal, Bedrooms → Gender, and options, Year Built and Square are removed. `squaresRange` removed from the default inquiries (it would have failed against the API). |
+| AddNewProduct form | Fields: title, price, type, location, species, gender (shown and required only for PET), description, images. Gender is left out of the input for non-PET types. Upload target `'product'`. |
+| Redirects | `next.config.js`: `/property` and `/property/:path*` → `/product…`; `/_admin/properties` → `/_admin/products` (307, query string kept) |
+
+| Check | Result |
+|---|---|
+| `yarn typecheck` | **Pass** (168 errors at the start of Phase 5 → 0) |
+| GraphQL documents vs live schema (introspection SDL) | **36 / 36 valid** (the old documents: 26 invalid) |
+| `yarn build` | **Pass** |
+| Read-only queries against `:3007` | `GET_PRODUCTS` (default, by rank, PET/DOG/CAT/MALE filter) and `GET_AGENTS`: no errors. The dev DB has **0 products and 0 agents**, so `GET_PRODUCT` and the rendering of real data were not exercised. |
+| `yarn dev` | `/`, `/product`, `/product/detail`, `/mypage`, `/agent`, `/_admin/products` → 200; redirects → 307 to the right targets |
+| Translation keys | 6 `property` keys lost in the bulk rename were found. 4 were restored (alerts, Notice, layout title); `Property Size` and `Property Options` belonged to removed rows. |
+| Not done | Mutations (`createProduct`, `likeTargetProduct`, comments, upload) and browser QA. They need an AGENT account and write to the dev DB. |
+| Git | `petoria-next` commit `bc78d67 feat: migrate frontend domain from Property to Product` |
+
+Known follow-ups:
+- Phase 6: new keys (`Species`, `Gender`, `Available`, `Sold out`, `Status`, `Listed`, `Location`) and the enum values (`PET`, `DOG`, `MALE`…) have no translations yet, so they show as English.
+- Phase 7: the `HeaderFilter` type tiles use `/img/banner/types/{pet,food,toy,accessory}.webp`, which don't exist yet; the detail page still has the hard-coded Daegu map.
